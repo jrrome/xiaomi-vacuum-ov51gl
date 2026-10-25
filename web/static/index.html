@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f1216">
+<title>H40</title>
+<style>
+  :root{
+    --bg:#0f1216; --card:#171b21; --line:#242a33; --txt:#e8edf3;
+    --dim:#8b97a6; --accent:#4da3ff; --ok:#3ddc97; --warn:#ffb020; --danger:#ff5252;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; background:var(--bg); color:var(--txt);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  body{padding:14px 14px calc(24px + env(safe-area-inset-bottom)); max-width:520px; margin:0 auto}
+  h1{font-size:15px; font-weight:600; letter-spacing:.02em; margin:0}
+  .muted{color:var(--dim); font-size:13px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:14px; margin-bottom:12px}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .top{display:flex; align-items:center; gap:10px; margin-bottom:12px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim); flex:none}
+  .dot.on{background:var(--ok); box-shadow:0 0 10px var(--ok)}
+  .battery{font-variant-numeric:tabular-nums; font-weight:600}
+  .bar{height:8px; background:#0b0e12; border-radius:99px; overflow:hidden; margin-top:10px}
+  .bar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,#4da3ff,#3ddc97); transition:width .4s}
+  .grid{display:grid; gap:8px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  button{font:inherit; color:var(--txt); background:#1e242c; border:1px solid var(--line);
+    border-radius:12px; padding:12px 10px; width:100%; cursor:pointer; transition:.12s;
+    touch-action:manipulation; user-select:none}
+  button:active{transform:scale(.97); background:#26303a}
+  button.on{background:#16344f; border-color:#2a6f9e; color:#bfe0ff}
+  button.primary{background:#164a34; border-color:#1f6a4a}
+  button.danger{background:#3a1618; border-color:#6b2429; color:#ffb4b4}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.45}
+  .label{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 8px}
+  .pad{position:relative; width:100%; aspect-ratio:1/1; max-width:280px; margin:6px auto 10px;
+    border-radius:50%; background:radial-gradient(circle at 50% 45%, #1c232c, #12161b 70%);
+    border:1px solid var(--line); touch-action:none; overflow:hidden}
+  .pad .ring{position:absolute; inset:18%; border:1px dashed #2b3440; border-radius:50%}
+  .pad .cross{position:absolute; inset:0; color:#2f3a47; font-size:22px; pointer-events:none}
+  .pad .cross span{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%)}
+  .pad .cross .u{top:12%} .pad .cross .d{top:88%} .pad .cross .l{left:12%} .pad .cross .r{left:88%}
+  .knob{position:absolute; width:34%; height:34%; left:33%; top:33%; border-radius:50%;
+    background:linear-gradient(160deg,#2f6ea8,#1b4468); border:1px solid #3f7fb5;
+    box-shadow:0 8px 24px #0006; transition:transform .05s linear; display:grid; place-items:center;
+    font-size:20px; color:#cfe6ff}
+  .map{width:100%; border-radius:12px; background:#0b0e12; display:block; min-height:80px}
+  .toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px);
+    background:#222a33; border:1px solid var(--line); padding:10px 16px; border-radius:99px;
+    font-size:13px; opacity:0; transition:.2s; pointer-events:none; z-index:9; max-width:90%}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .warn{color:var(--warn)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <span class="dot" id="dot"></span>
+  <div style="flex:1">
+    <h1 id="room">Xiaomi H40</h1>
+    <div class="muted" id="sub">conectando…</div>
+  </div>
+  <div class="battery" id="batt">—</div>
+</div>
+
+<div class="card" id="statusCard">
+  <div class="row">
+    <div>
+      <div class="label">Estado</div>
+      <div style="font-size:19px;font-weight:600" id="state">—</div>
+    </div>
+    <div style="text-align:right">
+      <div class="label" id="progLabel">Progreso</div>
+      <div style="font-size:19px;font-weight:600" id="pct">—</div>
+    </div>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="row" style="margin-top:10px">
+    <span class="muted" id="area">—</span>
+    <span class="muted" id="time">—</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="row" style="margin-bottom:10px">
+    <div class="label" style="margin:0">Mando</div>
+    <button id="remoteBtn" style="width:auto;padding:8px 14px;font-size:13px">Activar</button>
+  </div>
+  <div class="pad" id="pad">
+    <div class="ring"></div>
+    <div class="cross"><span class="u">▲</span><span class="l">◀</span><span class="r">▶</span></div>
+    <div class="knob" id="knob">✥</div>
+  </div>
+  <div class="muted" style="text-align:center;margin-bottom:10px">
+    Arrastra arriba para avanzar, izquierda/derecha para girar. No hay marcha atrás.
+  </div>
+  <button class="danger" id="stopBtn">PARAR</button>
+</div>
+
+<div class="card">
+  <div class="label">Aspiración</div>
+  <div class="grid g2" id="modeRow"></div>
+  <div class="label" style="margin-top:14px">Agua</div>
+  <div class="grid g2" id="waterRow"></div>
+  <div class="label" style="margin-top:14px">Modo</div>
+  <div class="grid g2" id="sweepRow"></div>
+  <div class="label" style="margin-top:14px">Pasadas</div>
+  <div class="grid g3" id="timesRow"></div>
+</div>
+
+<div class="card">
+  <div class="label">Acciones</div>
+  <div class="grid g2">
+    <button class="primary" data-act="start">Empezar</button>
+    <button data-act="pause">Pausar</button>
+    <button data-act="resume">Reanudar</button>
+    <button data-act="dock">A la base</button>
+    <button data-act="spot" class="ghost" style="grid-column:1/-1">Limpiar aquí (punto)</button>
+  </div>
+  <div class="muted" style="margin-top:10px" id="tanks">—</div>
+</div>
+
+<div class="card">
+  <div class="row" style="margin-bottom:10px">
+    <div class="label" style="margin:0">Mapa</div>
+    <button id="mapBtn" style="width:auto;padding:8px 14px;font-size:13px">Actualizar</button>
+  </div>
+  <img class="map" id="map" alt="mapa">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const MODES = [[1,"Silencioso"],[2,"Básico"],[3,"Fuerte"],[4,"Máximo"]];
+const WATER = [[0,"Sin agua"],[1,"Nivel 1"],[2,"Nivel 2"],[3,"Nivel 3"]];
+const SWEEP = [[1,"Aspirar"],[2,"Fregar"],[3,"Aspirar+fregar"],[4,"Aspirar y luego fregar"]];
+const TIMES = [[1,"1"],[2,"2"],[3,"3"]];
+
+let state = {};
+let remote = false;
+let holdDir = null;
+
+function toast(msg, ms = 1800){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), ms);
+}
+
+async function api(path, body){
+  const res = await fetch(path, body ? {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+  } : undefined);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+function chips(el, options, current, cb){
+  el.innerHTML = "";
+  for (const [value, label] of options){
+    const b = document.createElement("button");
+    b.textContent = label;
+    if (value === current) b.classList.add("on");
+    b.onclick = () => cb(value);
+    el.appendChild(b);
+  }
+}
+
+function fmtTime(seconds){
+  if (!seconds) return "0 min";
+  const m = Math.round(seconds / 60);
+  return m >= 60 ? `${Math.floor(m/60)} h ${m%60} min` : `${m} min`;
+}
+
+function paint(){
+  const s = state;
+  const working = [4, 7, 10, 16, 17].includes(s.status);
+  $("#dot").classList.toggle("on", working);
+  $("#batt").textContent = (s.battery ?? "—") + "%";
+  $("#state").textContent = s.status_text || "—";
+  $("#sub").textContent = s.status === 8 ? "modo mando activo" : (s.charging ? "en la base" : "");
+  $("#pct").textContent = (s.progress ?? 0) + "%";
+  $("#prog").style.width = (s.progress ?? 0) + "%";
+  $("#progLabel").textContent = working ? "Progreso" : "Última limpieza";
+  $("#area").textContent = s.area ? (s.area / 100).toFixed(1) + " m²" : "—";
+  $("#time").textContent = fmtTime(s.clean_time);
+  $("#tanks").textContent =
+    `Depósito sucio: ${s.sewage ? "lleno" : "ok"} · limpio: ${s.water_tank ? "vacío" : "ok"}` +
+    (s.mop ? " · mopa puesta" : "");
+
+  if (s.status === 8) remote = true;
+  $("#remoteBtn").textContent = remote ? "Salir" : "Activar";
+  $("#remoteBtn").classList.toggle("on", remote);
+
+  chips($("#modeRow"), MODES, s.mode, v => setProp("mode", v));
+  chips($("#waterRow"), WATER, s.water, v => setProp("water", v));
+  chips($("#sweepRow"), SWEEP, s.sweep_mop, v => setProp("sweep_mop", v));
+  chips($("#timesRow"), TIMES, s.times, v => setProp("times", v));
+}
+
+async function refresh(){
+  try {
+    state = await api("/api/state");
+    paint();
+  } catch (e) {
+    $("#sub").textContent = "sin conexión con el robot";
+    $("#dot").classList.remove("on");
+  }
+}
+
+async function setProp(name, value){
+  try { await api("/api/set", {name, value}); toast("Aplicado"); refresh(); }
+  catch (e) { toast("Error: " + e.message); }
+}
+
+async function doAct(name){
+  try { await api("/api/action", {name}); toast("Hecho"); setTimeout(refresh, 600); }
+  catch (e) { toast("Error: " + e.message); }
+}
+
+document.querySelectorAll("[data-act]").forEach(b => {
+  b.onclick = () => doAct(b.dataset.act);
+});
+
+let idleTimer = null;
+function armIdle(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(async () => {
+    if (remote && !holdDir){
+      try {
+        await api("/api/action", {name: "exit_remote"});
+        remote = false;
+        paint();
+        toast("Mando desactivado por inactividad");
+      } catch (e) { /* nada */ }
+    }
+  }, 120000);
+}
+
+$("#stopBtn").onclick = async () => {
+  try {
+    await api("/api/action", {name: "stop"});
+    if (remote){
+      await api("/api/action", {name: "exit_remote"});
+      remote = false;
+    }
+    toast("Parado");
+    setTimeout(refresh, 600);
+  } catch (e) { toast("Error: " + e.message); }
+};
+
+$("#remoteBtn").onclick = async () => {
+  try {
+    await api("/api/action", {name: remote ? "exit_remote" : "enter_remote"});
+    remote = !remote;
+    if (remote) armIdle(); else clearTimeout(idleTimer);
+    paint();
+    toast(remote ? "Mando activado" : "Mando desactivado");
+    setTimeout(refresh, 900);
+  } catch (e) { toast("Error: " + e.message); }
+};
+
+/* ---- joystick ---- */
+const pad = $("#pad"), knob = $("#knob");
+const RADIUS = 90, DEAD = 14;
+let padId = null;
+
+function direction(dx, dy){
+  if (Math.hypot(dx, dy) < DEAD) return null;
+  if (dy < -Math.abs(dx) * 0.75) return "up";
+  return dx < 0 ? "left" : "right";
+}
+
+async function sendMove(dir, op){
+  if (!remote) return;
+  try { await api("/api/move", {dir, op}); armIdle(); } catch (e) { /* silencioso */ }
+}
+
+function moveKnob(dx, dy){
+  const len = Math.hypot(dx, dy);
+  const k = len > RADIUS ? RADIUS / len : 1;
+  knob.style.transform = `translate(${dx*k}px, ${dy*k}px)`;
+}
+
+pad.addEventListener("pointerdown", (ev) => {
+  padId = ev.pointerId;
+  pad.setPointerCapture(padId);
+  handle(ev);
+});
+pad.addEventListener("pointermove", (ev) => { if (ev.pointerId === padId) handle(ev); });
+pad.addEventListener("pointerup", endPad);
+pad.addEventListener("pointercancel", endPad);
+
+async function handle(ev){
+  const r = pad.getBoundingClientRect();
+  const dx = ev.clientX - (r.left + r.width/2);
+  const dy = ev.clientY - (r.top + r.height/2);
+  moveKnob(dx, dy);
+  const dir = direction(dx, dy);
+  if (dir === holdDir) return;
+  if (holdDir) await sendMove(holdDir, "lift");
+  holdDir = dir;
+  if (dir) await sendMove(dir, "press");
+}
+
+async function endPad(ev){
+  if (padId !== null && ev.pointerId !== padId) return;
+  padId = null;
+  if (holdDir) await sendMove(holdDir, "lift");
+  holdDir = null;
+  knob.style.transform = "translate(0,0)";
+}
+
+/* ---- mapa ---- */
+async function loadMap(){
+  const img = $("#map");
+  img.src = "/api/map.png?t=" + Date.now();
+}
+$("#mapBtn").onclick = loadMap;
+$("#map").onerror = () => { $("#map").alt = "mapa no disponible"; };
+
+refresh();
+setInterval(refresh, 2500);
+setTimeout(loadMap, 1200);
+</script>
+</body>
+</html>

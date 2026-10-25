@@ -1,0 +1,7 @@
+.venv/
+.secrets/
+maps/
+voice/
+__pycache__/
+*.pyc
+.DS_Store
